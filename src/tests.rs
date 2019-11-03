@@ -4,6 +4,6 @@ use crate::*;
 fn load_minizork() {
     println!(
         "{}",
-        ZMachine::from_file("minizork.z3").unwrap().get_abbrvd_zstring(ZStringAbbrv::new(20).unwrap())
+        ZMachine::from_file("minizork.z3").unwrap().get_zstring(WordAddress::from(ByteAddress(0xb106))).unwrap()
     );
 }

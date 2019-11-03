@@ -81,9 +81,8 @@ impl ZMachine {
                 | (bits[4] as u8)
         }
         let alphabet = self.get_alphabet();
-        let mut ten_bit = TenBitMode::Unset;
+        let mut state = ZStringState::Unset;
         let mut mode = AlphabetMode::Lowercase;
-        let mut prev_zchar = 0_u8;
         loop {
             let word = self.word(addr);
             let bits = BEBitSlice::from_element(&word);
@@ -93,20 +92,13 @@ impl ZMachine {
             let zchar3 = zchar_to_byte(&bits[11..16]);
             let zchars = [zchar1, zchar2, zchar3];
             for &zchar in &zchars {
-                let set_prev =
-                    self.decode_zchar(
-                        zchar,
-                        prev_zchar,
-                        &mut mode,
-                        &mut ten_bit,
-                        &alphabet,
-                        string,
-                    );
-                if set_prev {
-                    prev_zchar = zchar;
-                } else {
-                    prev_zchar = 0;
-                }
+                self.decode_zchar(
+                    zchar,
+                    &mut mode,
+                    &mut state,
+                    &alphabet,
+                    string,
+                );
             }
             if is_end {
                 break;
@@ -118,9 +110,8 @@ impl ZMachine {
     fn decode_zchar(
         &self,
         current_zchar: u8,
-        prev_zchar: u8,
-        mode: &mut AlphabetMode,
-        ten_bit: &mut TenBitMode,
+        alphabet_mode: &mut AlphabetMode,
+        state: &mut ZStringState,
         alphabet: &Alphabet,
         string: &mut String,
     ) -> bool {
@@ -138,75 +129,82 @@ impl ZMachine {
                 AlphabetMode::Symbol => AlphabetMode::Uppercase,
             }
         }
-        let current_mode = match prev_zchar {
-            2 if self.version() < Version::V3 => rotate_up(*mode),
-            3 if self.version() < Version::V3 => rotate_down(*mode),
-            4 => {
-                let current_mode = rotate_up(*mode);
-                if self.version() < Version::V3 {
-                    *mode = current_mode;
+        let mut current_mode = *alphabet_mode;
+        let (printable, mut new_state) = match *state {
+            ZStringState::TenBitHigh => (false, ZStringState::TenBitLow(current_zchar)),
+            ZStringState::TenBitLow(prev) => {
+                let zscii = ((prev as u16) << 5) | current_zchar as u16;
+                match zscii {
+                    9 => {
+                        if self.version() == Version::V6 {
+                            string.push('\t');
+                        }
+                    }
+                    11 => {
+                        if self.version() == Version::V6 {
+                            string.push(' '); // sentence space
+                        }
+                    }
+                    13 => string.push('\n'),
+                    32..=126 => string.push(zscii as u8 as char),
+                    155..=251 => string.push(self.get_unicode_table().get_char_for_zscii(zscii as u8)),
+                    _ => {}
                 }
-                current_mode
+                (false, ZStringState::Unset)
             }
-            5 => {
-                let current_mode = rotate_down(*mode);
-                if self.version() < Version::V3 {
-                    *mode = current_mode;
-                }
-                current_mode
+            ZStringState::Abbreviation(section) => {
+                let abbrv = ZStringAbbrv((section - 1) * 32 + current_zchar);
+                self.copy_abbrvd_zstring(abbrv, string);
+                (false, ZStringState::Unset)
             }
-            _ => *mode,
+            ZStringState::ModeShift(mode) => {
+                current_mode = mode;
+                (true, ZStringState::Unset)
+            }
+            ZStringState::Unset => (true, ZStringState::Unset)
         };
-        if *ten_bit == TenBitMode::Low {
-            let zscii = ((prev_zchar as u16) << 5) | current_zchar as u16;
-            *ten_bit = TenBitMode::Unset;
-            match zscii {
-                9 => {
-                    if self.version() == Version::V6 {
-                        string.push('\t');
-                    }
+        if printable {
+            new_state = match current_zchar {
+                0 => {
+                    string.push(' ');
+                    new_state
+                },
+                1 => if self.version() == Version::V1 {
+                    string.push('\n');
+                    new_state
+                } else {
+                    ZStringState::Abbreviation(1)
                 }
-                11 => {
-                    if self.version() == Version::V6 {
-                        string.push(' '); // sentence space
-                    }
-                }
-                13 => string.push('\n'),
-                32..=126 => string.push(zscii as u8 as char),
-                155..=251 => string.push(self.get_unicode_table().get_char_for_zscii(zscii as u8)),
-                _ => {}
-            }
-        } else {
-            match prev_zchar {
-                1 => {
-                    if self.version() != Version::V1 {
-                        self.copy_abbrvd_zstring(ZStringAbbrv(current_zchar), string);
-                        return false;
-                    }
-                }
-                2 | 3 => {
-                    if self.version() > Version::V2 {
-                        let abbrv = ZStringAbbrv((prev_zchar - 1) * 32 + current_zchar);
-                        self.copy_abbrvd_zstring(abbrv, string);
-                        return false;
-                    }
-                }
-                6 if *ten_bit == TenBitMode::High => {
-                    *ten_bit = TenBitMode::Low;
-                }
+                2 => if self.version() > Version::V2 {
+                    ZStringState::Abbreviation(2)
+                } else {
+                    ZStringState::ModeShift(rotate_up(*alphabet_mode))
+                },
+                3 => if self.version() > Version::V2 {
+                    ZStringState::Abbreviation(3)
+                } else {
+                    ZStringState::ModeShift(rotate_down(*alphabet_mode))
+                },
+                4 => if self.version() > Version::V2 {
+                    ZStringState::ModeShift(rotate_up(*alphabet_mode))
+                } else {
+                    *alphabet_mode = rotate_up(*alphabet_mode);
+                    new_state
+                },
+                5 => if self.version() > Version::V2 {
+                    ZStringState::ModeShift(rotate_down(*alphabet_mode))
+                } else {
+                    *alphabet_mode = rotate_down(*alphabet_mode);
+                    new_state
+                },
+                6 if current_mode == AlphabetMode::Symbol => ZStringState::TenBitHigh,
                 _ => {
-                    match current_zchar {
-                        0 => string.push(' '),
-                        1 => if self.version() == Version::V1 {
-                            string.push('\n');
-                        },
-                        2..=5 => {}
-                        6 if current_mode == AlphabetMode::Symbol => *ten_bit = TenBitMode::High,
-                        _ => string.push(alphabet.get_letter_for_zchar(current_zchar, current_mode)),
-                    }
-                }
-            }
+                    string.push(alphabet.get_letter_for_zchar(current_zchar, current_mode));
+                    new_state
+                },
+            };
         }
+        *state = new_state;
         true
     }
     /// Gets the alphabet in use by this story.
@@ -264,6 +262,15 @@ impl ZMachine {
 enum TenBitMode {
     High,
     Low,
+    Unset,
+}
+
+#[derive(Debug, Copy, Clone)]
+enum ZStringState {
+    TenBitHigh,
+    TenBitLow(u8),
+    ModeShift(AlphabetMode),
+    Abbreviation(u8),
     Unset,
 }
 
