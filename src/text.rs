@@ -258,13 +258,6 @@ impl ZMachine {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-enum TenBitMode {
-    High,
-    Low,
-    Unset,
-}
-
 #[derive(Debug, Copy, Clone)]
 enum ZStringState {
     TenBitHigh,
