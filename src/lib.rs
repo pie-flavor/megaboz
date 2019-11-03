@@ -8,15 +8,10 @@ mod bits;
 pub use self::bits::*;
 mod memory;
 pub use self::memory::*;
-mod vm;
-pub use self::vm::*;
 mod meta;
 pub use self::meta::*;
-mod util;
-pub use self::util::*;
 mod text;
 pub use self::text::*;
-pub mod constants;
 
 use failure::Fail;
 use std::fs::File;
