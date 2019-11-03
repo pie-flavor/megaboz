@@ -10,7 +10,8 @@ use crate::*;
 
 pub type Word = u16;
 
-pub type ZBitSlice = BitSlice<BigEndian, u8>;
+pub type ZBitSlice = BEBitSlice<u8>;
+pub type BEBitSlice<T> = BitSlice<BigEndian, T>;
 
 /// Wrapper type for a [`usize`] representing a byte address.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

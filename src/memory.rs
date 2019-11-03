@@ -10,7 +10,8 @@ impl ZMachine {
     /// Gets the range of memory classified 'static'.
     pub fn static_memory_range(&self) -> Range<WordAddress> {
         let end = cmp::min(self.len_bytes(), 0x10000);
-        WordAddress::from(self.word(WordAddress::STATIC_MEMORY_LOCATION))..WordAddress::from(ByteAddress(end))
+        WordAddress::from(self.word(WordAddress::STATIC_MEMORY_LOCATION))
+            ..WordAddress::from(ByteAddress(end))
     }
     /// Gets the range of memory classified 'high'.
     pub fn high_memory_range(&self) -> Range<WordAddress> {
@@ -31,7 +32,12 @@ impl ZMachine {
         let byte_address = ByteAddress::from(address);
         self.memory[byte_address.0..=(byte_address + 1).0].swap_with_slice(&mut bytes);
     }
+    pub fn bit_range(&self, range: Range<BitAddress>) -> &ZBitSlice {
+        &ZBitSlice::from_slice(&self.memory)[range.start.addr()..range.end.addr()]
+    }
     pub fn get_abbreviations_table_base(&self) -> WordAddress {
-        WordAddress::from(ByteAddress::from(self.word(WordAddress::ABBREVIATIONS_LOCATION)))
+        WordAddress::from(ByteAddress::from(
+            self.word(WordAddress::ABBREVIATIONS_LOCATION),
+        ))
     }
 }

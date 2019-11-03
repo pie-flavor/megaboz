@@ -44,12 +44,12 @@ impl WordAddress {
     pub const OUTPUT_STREAM_3_WIDTH_TOTAL_PIXELS: Self = Self(0x18);
     pub const ALPHABET_TABLE_ADDRESS: Self = Self(0x1A);
     pub const HEADER_EXTENSION_TABLE_ADDRESS: Self = Self(0x1B);
-    pub const HEADER_EXT_SIZE: Self = Self(0x0);
-    pub const HEADER_EXT_MOUSE_X: Self = Self(0x1);
-    pub const HEADER_EXT_MOUSE_Y: Self = Self(0x2);
-    pub const HEADER_EXT_UNICODE_TRANSLATION_TABLE_LOCATION: Self = Self(0x3);
-    pub const HEADER_EXT_DEFAULT_FOREGROUND_COLOR: Self = Self(0x5);
-    pub const HEADER_EXT_DEFAULT_BACKGROUND_COLOR: Self = Self(0x6);
+    pub const HEADER_EXT_SIZE: usize = 0x0;
+    pub const HEADER_EXT_MOUSE_X: usize = 0x1;
+    pub const HEADER_EXT_MOUSE_Y: usize = 0x2;
+    pub const HEADER_EXT_UNICODE_TRANSLATION_TABLE_LOCATION: usize = 0x3;
+    pub const HEADER_EXT_DEFAULT_FOREGROUND_COLOR: usize = 0x5;
+    pub const HEADER_EXT_DEFAULT_BACKGROUND_COLOR: usize = 0x6;
 }
 
 impl ByteAddress {
@@ -69,5 +69,5 @@ impl ByteAddress {
 }
 
 impl BitAddress {
-    pub const HEADER_EXT_UNUSED_FLAGS3: Range<Self> = Self(0x41)..Self(0x48);
+    pub const HEADER_EXT_UNUSED_FLAGS3: Range<usize> = 0x41..0x48;
 }

@@ -18,10 +18,10 @@ mod text;
 pub use self::text::*;
 pub mod constants;
 
-use std::path::Path;
+use failure::Fail;
 use std::fs::File;
 use std::io::{Error as IoError, Read};
-use failure::Fail;
+use std::path::Path;
 
 /// An implementation of a [Z-Machine](https://en.wikipedia.org/wiki/Z-machine) with a loaded story.
 pub struct ZMachine {
@@ -33,11 +33,9 @@ impl ZMachine {
     pub fn new(file: impl Into<Vec<u8>>) -> LoadResult<Self> {
         let vec = file.into();
         if vec.len() < 64 {
-            return Err(LoadError::TooSmall(vec.len()))
+            return Err(LoadError::TooSmall(vec.len()));
         }
-        Ok(Self {
-            memory: vec,
-        })
+        Ok(Self { memory: vec })
     }
     /// Utility function for reading from a filename and passing the contents to [`Self::new`].
     pub fn from_file(path: impl AsRef<Path>) -> LoadResult<Self> {

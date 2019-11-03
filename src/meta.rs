@@ -18,7 +18,14 @@ pub enum Version {
 }
 
 impl Version {
-    pub const VALUES: [Version; 6] = [Version::V1, Version::V2, Version::V3, Version::V4, Version::V5, Version::V6];
+    pub const VALUES: [Version; 6] = [
+        Version::V1,
+        Version::V2,
+        Version::V3,
+        Version::V4,
+        Version::V5,
+        Version::V6,
+    ];
 }
 
 /// The status line that the game displays.
