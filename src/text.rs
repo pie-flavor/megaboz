@@ -166,9 +166,7 @@ impl ZMachine {
                     }
                 }
                 1 => {
-                    if self.version() == Version::V1 {
-                        string.push('\n');
-                    } else {
+                    if self.version() != Version::V1 {
                         self.copy_abbrvd_zstring(ZStringAbbrv(current_zchar), string);
                     }
                 }
@@ -184,10 +182,13 @@ impl ZMachine {
                     }
                 }
                 _ => {
-                    if current_zchar == 0 {
-                        string.push(' ');
-                    } else {
-                        string.push(alphabet.get_letter_for_zchar(current_zchar, current_mode))
+                    match current_zchar {
+                        0 => string.push(' '),
+                        1 => if self.version() == Version::V1 {
+                            string.push('\n');
+                        },
+                        2..=6 => {},
+                        _ => string.push(alphabet.get_letter_for_zchar(current_zchar, current_mode)),
                     }
                 }
             }
