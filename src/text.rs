@@ -38,7 +38,7 @@ impl ZMachine {
     }
     /// Returns a Z-string referenced by a particular abbreviation. Panics if
     /// [`is_abbrv_valid`](ZMachine::is_abbrv_valid) returns false for this abbreviation.
-    pub fn abbrvd_zstring(&self, abbrv: ZStringAbbrv) -> String {
+    pub fn read_abbrvd_zstring(&self, abbrv: ZStringAbbrv) -> String {
         let mut string = String::new();
         self.copy_abbrvd_zstring(abbrv, &mut string);
         string
@@ -61,7 +61,7 @@ impl ZMachine {
     }
     /// Returns a Z-string at a particular address in memory, if there is one. If it is not a valid
     /// Z-string starting point, returns [`None`].
-    pub fn zstring(&self, addr: ByteAddress) -> Option<String> {
+    pub fn read_zstring(&self, addr: ByteAddress) -> Option<String> {
         let mut str = String::new();
         if self.copy_zstring(addr, &mut str) {
             Some(str)
@@ -255,7 +255,7 @@ impl ZMachine {
         self[self.dictionary_base()] as usize
     }
     /// Returns a list of all the word separator characters (excluding space).
-    pub fn word_separators(&self) -> Vec<char> {
+    pub fn read_word_separators(&self) -> Vec<char> {
         let mut vec = Vec::new();
         self.copy_word_separators(&mut vec);
         vec
@@ -308,7 +308,7 @@ impl ZMachine {
     }
     /// Returns a dictionary word at a particular index. Panics if the index is out of bounds
     /// ([`dictionary_len`](ZMachine::dictionary_len))
-    pub fn dictionary_word(&self, idx: usize) -> String {
+    pub fn read_dictionary_word(&self, idx: usize) -> String {
         let mut string = String::new();
         self.copy_dictionary_word(idx, &mut string);
         string
@@ -336,7 +336,7 @@ impl ZMachine {
         let start = ByteAddress::from(self.dictionary_words_base() + 2);
         for x in 0..len {
             vec.push(
-                self.zstring(start + x * word_sz)
+                self.read_zstring(start + x * word_sz)
                     .unwrap_or_else(|| panic!("Invalid Z-string at dictionary index {}", x)),
             );
         }
