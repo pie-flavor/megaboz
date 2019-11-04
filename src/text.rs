@@ -207,7 +207,7 @@ impl ZMachine {
                 symbol: &DEFAULT_SYMBOL_ALPHABET_V1,
             },
             Version::V2 | Version::V3 | Version::V4 => Alphabet::default(),
-            Version::V5 | Version::V6 => {
+            _ => {
                 let word = self.word(ByteAddress::DICTIONARY_LOCATION);
                 if word == 0 {
                     Alphabet::default()

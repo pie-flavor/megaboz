@@ -15,16 +15,22 @@ pub enum Version {
     V5,
     /// Version 6.
     V6,
+    /// Version 7.
+    V7,
+    /// Version 8.
+    V8,
 }
 
 impl Version {
-    pub const VALUES: [Version; 6] = [
+    pub const VALUES: [Version; 8] = [
         Version::V1,
         Version::V2,
         Version::V3,
         Version::V4,
         Version::V5,
         Version::V6,
+        Version::V7,
+        Version::V8,
     ];
 }
 
