@@ -24,7 +24,7 @@ pub struct BitAddress(usize);
 impl ByteAddress {
     /// The byte address `0x0`.
     pub const ZERO: Self = Self(0);
-    /// The address number, in bytes. Equivalent to `addr.0`.
+    /// Returns the address number, in bytes. Equivalent to `addr.0`.
     pub fn addr(&self) -> usize {
         self.0
     }
@@ -33,8 +33,8 @@ impl ByteAddress {
 impl BitAddress {
     /// The bit address `0x0`.
     pub const ZERO: Self = Self(0);
-    /// The address number, in bits. Be careful not to make or do math with a different kind of
-    /// address.
+    /// Returns the address number, in bits. Be careful not to make or do math with a different kind
+    /// of address.
     pub fn addr(&self) -> usize {
         self.0
     }

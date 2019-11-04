@@ -42,11 +42,11 @@ impl StatusLine {
 }
 
 impl ZMachine {
-    /// Gets the version of this story.
+    /// Returns the version of this story.
     pub fn version(&self) -> Version {
         Version::VALUES[self[ByteAddress::STORY_VERSION] as usize - 1]
     }
-    /// Gets what the status line should display, or [`None`] if not applicable.
+    /// Returns what the status line should display, or [`None`] if not applicable.
     pub fn status_line(&self) -> Option<StatusLine> {
         if self.version() <= Version::V3 {
             Some(
@@ -60,7 +60,7 @@ impl ZMachine {
             None
         }
     }
-    /// Gets whether the story is in two-disk mode.
+    /// Returns whether the story is in two-disk mode.
     pub fn is_two_disks(&self) -> bool {
         self[BitAddress::TWO_DISKS]
     }

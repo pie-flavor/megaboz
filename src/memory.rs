@@ -3,16 +3,16 @@ use std::cmp;
 use std::ops::Range;
 
 impl ZMachine {
-    /// Gets the range of memory classified 'dynamic'.
+    /// Returns the range of memory classified 'dynamic'.
     pub fn dynamic_memory_range(&self) -> Range<ByteAddress> {
         ByteAddress::ZERO..ByteAddress::from(self.word(ByteAddress::STATIC_MEMORY_LOCATION) - 1)
     }
-    /// Gets the range of memory classified 'static'.
+    /// Returns the range of memory classified 'static'.
     pub fn static_memory_range(&self) -> Range<ByteAddress> {
         let end = cmp::min(self.len_bytes(), 0x10000);
         ByteAddress::from(self.word(ByteAddress::STATIC_MEMORY_LOCATION))..ByteAddress(end)
     }
-    /// Gets the range of memory classified 'high'.
+    /// Returns the range of memory classified 'high'.
     pub fn high_memory_range(&self) -> Range<ByteAddress> {
         ByteAddress::from(self.word(ByteAddress::HIGH_MEMORY_LOCATION))
             ..ByteAddress(self.len_bytes())
@@ -33,7 +33,7 @@ impl ZMachine {
     pub fn bit_range(&self, range: Range<BitAddress>) -> &ZBitSlice {
         &ZBitSlice::from_slice(&self.memory)[range.start.addr()..range.end.addr()]
     }
-    pub fn get_abbreviations_table_base(&self) -> ByteAddress {
+    pub fn abbreviations_table_base(&self) -> ByteAddress {
         ByteAddress::from(self.word(ByteAddress::ABBREVIATIONS_LOCATION))
     }
 }

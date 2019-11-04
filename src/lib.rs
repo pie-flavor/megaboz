@@ -40,15 +40,15 @@ impl ZMachine {
         Self::new(vec)
     }
     //todo version-specific header sizing
-    /// Gets the length of the story in bytes.
+    /// Returns the length of the story in bytes.
     pub fn len_bytes(&self) -> usize {
         self.memory.len()
     }
-    /// Gets the length of the story in bits.
+    /// Returns the length of the story in bits.
     pub fn len_bits(&self) -> usize {
         self.memory.len() * 8
     }
-    /// Gets the length of the story in [`Word`]s.
+    /// Returns the length of the story in [`Word`]s.
     pub fn len_words(&self) -> usize {
         self.memory.len() / 2
     }
