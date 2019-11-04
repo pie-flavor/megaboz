@@ -92,13 +92,7 @@ impl ZMachine {
             let zchar3 = zchar_to_byte(&bits[11..16]);
             let zchars = [zchar1, zchar2, zchar3];
             for &zchar in &zchars {
-                self.decode_zchar(
-                    zchar,
-                    &mut mode,
-                    &mut state,
-                    &alphabet,
-                    string,
-                );
+                self.decode_zchar(zchar, &mut mode, &mut state, &alphabet, string);
             }
             if is_end {
                 break;
@@ -147,7 +141,9 @@ impl ZMachine {
                     }
                     13 => string.push('\n'),
                     32..=126 => string.push(zscii as u8 as char),
-                    155..=251 => string.push(self.get_unicode_table().get_char_for_zscii(zscii as u8)),
+                    155..=251 => {
+                        string.push(self.get_unicode_table().get_char_for_zscii(zscii as u8))
+                    }
                     _ => {}
                 }
                 (false, ZStringState::Unset)
@@ -161,47 +157,57 @@ impl ZMachine {
                 current_mode = mode;
                 (true, ZStringState::Unset)
             }
-            ZStringState::Unset => (true, ZStringState::Unset)
+            ZStringState::Unset => (true, ZStringState::Unset),
         };
         if printable {
             new_state = match current_zchar {
                 0 => {
                     string.push(' ');
                     new_state
-                },
-                1 => if self.version() == Version::V1 {
-                    string.push('\n');
-                    new_state
-                } else {
-                    ZStringState::Abbreviation(1)
                 }
-                2 => if self.version() > Version::V2 {
-                    ZStringState::Abbreviation(2)
-                } else {
-                    ZStringState::ModeShift(rotate_up(*alphabet_mode))
-                },
-                3 => if self.version() > Version::V2 {
-                    ZStringState::Abbreviation(3)
-                } else {
-                    ZStringState::ModeShift(rotate_down(*alphabet_mode))
-                },
-                4 => if self.version() > Version::V2 {
-                    ZStringState::ModeShift(rotate_up(*alphabet_mode))
-                } else {
-                    *alphabet_mode = rotate_up(*alphabet_mode);
-                    new_state
-                },
-                5 => if self.version() > Version::V2 {
-                    ZStringState::ModeShift(rotate_down(*alphabet_mode))
-                } else {
-                    *alphabet_mode = rotate_down(*alphabet_mode);
-                    new_state
-                },
+                1 => {
+                    if self.version() == Version::V1 {
+                        string.push('\n');
+                        new_state
+                    } else {
+                        ZStringState::Abbreviation(1)
+                    }
+                }
+                2 => {
+                    if self.version() > Version::V2 {
+                        ZStringState::Abbreviation(2)
+                    } else {
+                        ZStringState::ModeShift(rotate_up(*alphabet_mode))
+                    }
+                }
+                3 => {
+                    if self.version() > Version::V2 {
+                        ZStringState::Abbreviation(3)
+                    } else {
+                        ZStringState::ModeShift(rotate_down(*alphabet_mode))
+                    }
+                }
+                4 => {
+                    if self.version() > Version::V2 {
+                        ZStringState::ModeShift(rotate_up(*alphabet_mode))
+                    } else {
+                        *alphabet_mode = rotate_up(*alphabet_mode);
+                        new_state
+                    }
+                }
+                5 => {
+                    if self.version() > Version::V2 {
+                        ZStringState::ModeShift(rotate_down(*alphabet_mode))
+                    } else {
+                        *alphabet_mode = rotate_down(*alphabet_mode);
+                        new_state
+                    }
+                }
                 6 if current_mode == AlphabetMode::Symbol => ZStringState::TenBitHigh,
                 _ => {
                     string.push(alphabet.get_letter_for_zchar(current_zchar, current_mode));
                     new_state
-                },
+                }
             };
         }
         *state = new_state;
