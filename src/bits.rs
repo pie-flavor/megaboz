@@ -21,33 +21,6 @@ pub struct ByteAddress(pub usize);
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BitAddress(usize);
 
-/// Wrapper type for a [`usize`] representing a [`Word`] address.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct WordAddress(usize);
-
-impl WordAddress {
-    /// The word address `0x0`.
-    pub const ZERO: Self = Self(0);
-    /// The address of the high byte of the [`Word`].
-    pub fn high_byte(&self) -> ByteAddress {
-        (*self).into()
-    }
-    /// The address of the low byte of the [`Word`].
-    pub fn low_byte(&self) -> ByteAddress {
-        self.high_byte() + 1
-    }
-    /// The address number, in words. Be careful not to make or do math with a different kind of
-    /// address.
-    pub fn addr(&self) -> usize {
-        self.0
-    }
-}
-
-impl WordAddress {
-    /// The section of a story containing the header.
-    const HEADER: Range<WordAddress> = WordAddress(0x00)..WordAddress(0x20);
-}
-
 impl ByteAddress {
     /// The byte address `0x0`.
     pub const ZERO: Self = Self(0);
@@ -74,12 +47,6 @@ impl From<Word> for ByteAddress {
 }
 
 impl From<Word> for BitAddress {
-    fn from(word: Word) -> Self {
-        ByteAddress::from(word).into()
-    }
-}
-
-impl From<Word> for WordAddress {
     fn from(word: Word) -> Self {
         ByteAddress::from(word).into()
     }
@@ -128,8 +95,7 @@ impl Index<RangeInclusive<ByteAddress>> for ZMachine {
 }
 
 impl ZMachine {
-    pub fn word(&self, index: WordAddress) -> Word {
-        let addr = ByteAddress::from(index);
+    pub fn word(&self, addr: ByteAddress) -> Word {
         let word = &self.memory[addr.0..=(addr + 1).0];
         Word::from_be_bytes([word[0], word[1]])
     }
@@ -141,33 +107,9 @@ impl From<BitAddress> for ByteAddress {
     }
 }
 
-impl From<WordAddress> for ByteAddress {
-    fn from(addr: WordAddress) -> Self {
-        Self(addr.0 * 2)
-    }
-}
-
 impl From<ByteAddress> for BitAddress {
     fn from(addr: ByteAddress) -> Self {
         Self(addr.0 * 8)
-    }
-}
-
-impl From<WordAddress> for BitAddress {
-    fn from(addr: WordAddress) -> Self {
-        Self(addr.0 * 16)
-    }
-}
-
-impl From<BitAddress> for WordAddress {
-    fn from(addr: BitAddress) -> Self {
-        Self(addr.0 / 16)
-    }
-}
-
-impl From<ByteAddress> for WordAddress {
-    fn from(addr: ByteAddress) -> Self {
-        Self(addr.0 / 2)
     }
 }
 
@@ -218,32 +160,6 @@ impl Sub<usize> for BitAddress {
 }
 
 impl SubAssign<usize> for BitAddress {
-    fn sub_assign(&mut self, rhs: usize) {
-        self.0 -= rhs;
-    }
-}
-
-impl Add<usize> for WordAddress {
-    type Output = WordAddress;
-    fn add(self, rhs: usize) -> Self::Output {
-        Self(self.0 + rhs)
-    }
-}
-
-impl AddAssign<usize> for WordAddress {
-    fn add_assign(&mut self, rhs: usize) {
-        self.0 += rhs;
-    }
-}
-
-impl Sub<usize> for WordAddress {
-    type Output = WordAddress;
-    fn sub(self, rhs: usize) -> Self::Output {
-        Self(self.0 - rhs)
-    }
-}
-
-impl SubAssign<usize> for WordAddress {
     fn sub_assign(&mut self, rhs: usize) {
         self.0 -= rhs;
     }

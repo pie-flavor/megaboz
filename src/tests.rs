@@ -4,7 +4,7 @@ use crate::*;
 fn read_zstring() {
     let dam_plaque = ZMachine::from_file("minizork.z3")
         .unwrap()
-        .get_zstring(WordAddress::from(ByteAddress(0xb106)))
+        .get_zstring(ByteAddress(0xb106))
         .unwrap();
     assert_eq!(dam_plaque, "\
 \"Flood Control Dam #3 was constructed in 783 GUE with a grant of 37 million zorkmids from Lord Dimwit Flathead the Excessive. This impressive structure is composed of 370,000 cubic feet of concrete, is 256 feet tall and 193 feet wide.
@@ -20,4 +20,12 @@ fn read_abbrv() {
         .unwrap()
         .get_abbrvd_zstring(ZStringAbbrv::new(20).unwrap());
     assert_eq!(abbrv, "through ")
+}
+
+#[test]
+fn read_dictionary_word() {
+    let word_27 = ZMachine::from_file("minizork.z3")
+        .unwrap()
+        .get_dictionary_word(27);
+    assert_eq!(word_27, "attach");
 }

@@ -51,7 +51,7 @@ impl ZMachine {
             abbrv.0
         );
         let abbrv_table = self.get_abbreviations_table_base();
-        let abbrv_table_idx = abbrv_table + abbrv.0 as usize;
+        let abbrv_table_idx = abbrv_table + (abbrv.0 as usize) * 2;
         let abbrv_addr = ByteAddress::from(self.word(abbrv_table_idx) * 2);
         assert!(
             self.copy_zstring(abbrv_addr.into(), str),
@@ -61,7 +61,7 @@ impl ZMachine {
     }
     /// Gets a Z-string at a particular address in memory, if there is one. If it is not a valid
     /// Z-string starting point, returns [`None`].
-    pub fn get_zstring(&self, addr: WordAddress) -> Option<String> {
+    pub fn get_zstring(&self, addr: ByteAddress) -> Option<String> {
         let mut str = String::new();
         if self.copy_zstring(addr, &mut str) {
             Some(str)
@@ -71,7 +71,7 @@ impl ZMachine {
     }
     /// Copies a Z-string at a particular address in memory into a string buffer, if there is one.
     /// Returns true if the copy was successful (i.e. a valid encoding) and false if it wasn't.
-    pub fn copy_zstring(&self, addr: WordAddress, string: &mut String) -> bool {
+    pub fn copy_zstring(&self, addr: ByteAddress, string: &mut String) -> bool {
         let mut addr = addr;
         fn zchar_to_byte(bits: &BEBitSlice<Word>) -> u8 {
             ((bits[0] as u8) << 4)
@@ -97,7 +97,7 @@ impl ZMachine {
             if is_end {
                 break;
             }
-            addr += 1;
+            addr += 2;
         }
         true
     }
@@ -128,23 +128,8 @@ impl ZMachine {
             ZStringState::TenBitHigh => (false, ZStringState::TenBitLow(current_zchar)),
             ZStringState::TenBitLow(prev) => {
                 let zscii = ((prev as u16) << 5) | current_zchar as u16;
-                match zscii {
-                    9 => {
-                        if self.version() == Version::V6 {
-                            string.push('\t');
-                        }
-                    }
-                    11 => {
-                        if self.version() == Version::V6 {
-                            string.push(' '); // sentence space
-                        }
-                    }
-                    13 => string.push('\n'),
-                    32..=126 => string.push(zscii as u8 as char),
-                    155..=251 => {
-                        string.push(self.get_unicode_table().get_char_for_zscii(zscii as u8))
-                    }
-                    _ => {}
+                if let Some(ch) = self.get_zscii_char(zscii) {
+                    string.push(ch);
                 }
                 (false, ZStringState::Unset)
             }
@@ -223,7 +208,7 @@ impl ZMachine {
             },
             Version::V2 | Version::V3 | Version::V4 => Alphabet::default(),
             Version::V5 | Version::V6 => {
-                let word = self.word(WordAddress::DICTIONARY_LOCATION);
+                let word = self.word(ByteAddress::DICTIONARY_LOCATION);
                 if word == 0 {
                     Alphabet::default()
                 } else {
@@ -243,13 +228,13 @@ impl ZMachine {
         if self.version() < Version::V5 {
             UnicodeTable::default()
         } else {
-            let word = self.word(WordAddress::HEADER_EXTENSION_TABLE_ADDRESS);
+            let word = self.word(ByteAddress::HEADER_EXTENSION_TABLE_ADDRESS);
             if word == 0 {
                 UnicodeTable::default()
             } else {
-                let ext_addr = WordAddress::from(ByteAddress::from(word));
+                let ext_addr = ByteAddress::from(word);
                 let unicode_addr_addr =
-                    ext_addr + WordAddress::HEADER_EXT_UNICODE_TRANSLATION_TABLE_LOCATION;
+                    ext_addr + ByteAddress::HEADER_EXT_UNICODE_TRANSLATION_TABLE_LOCATION;
                 let unicode_addr = self.word(unicode_addr_addr);
                 if unicode_addr == 0 {
                     UnicodeTable::default()
@@ -261,6 +246,101 @@ impl ZMachine {
                 }
             }
         }
+    }
+    /// Gets the base address of the dictionary (i.e. the start of the table header).
+    pub fn get_dictionary_base(&self) -> ByteAddress {
+        self.word(ByteAddress::DICTIONARY_LOCATION).into()
+    }
+    fn get_word_separators_len(&self) -> usize {
+        self[self.get_dictionary_base()] as usize
+    }
+    /// Gets a list of all the word separator characters (excluding space).
+    pub fn get_word_separators(&self) -> Vec<char> {
+        let mut vec = Vec::new();
+        self.copy_word_separators(&mut vec);
+        vec
+    }
+    /// Copies the word separator characters (excluding space) into a provided buffer.
+    pub fn copy_word_separators(&self, buf: &mut Vec<char>) {
+        let len = self.get_word_separators_len();
+        buf.reserve(len);
+        let separator_base = self.get_dictionary_base() + 1;
+        for x in 0..len {
+            let separator_addr = separator_base + x;
+            let zscii = self[separator_addr] as u16;
+            if let Some(ch) = self.get_zscii_char(zscii) {
+                buf.push(ch);
+            }
+        }
+    }
+    /// Converts a ZSCII character into a [`char`].
+    pub fn get_zscii_char(&self, zscii: u16) -> Option<char> {
+        match zscii {
+            9 => {
+                if self.version() == Version::V6 {
+                    Some('\t')
+                } else {
+                    None
+                }
+            }
+            11 => {
+                if self.version() == Version::V6 {
+                    Some(' ') // sentence space
+                } else {
+                    None
+                }
+            }
+            13 => Some('\n'),
+            32..=126 => Some(zscii as u8 as char),
+            155..=251 => Some(self.get_unicode_table().get_char_for_zscii(zscii as u8)),
+            _ => None,
+        }
+    }
+    fn get_dictionary_words_base(&self) -> ByteAddress {
+        self.get_dictionary_base() + self.get_word_separators_len() + 2
+    }
+    /// Gets the number of words in the dictionary.
+    pub fn get_dictionary_len(&self) -> usize {
+        self.word(self.get_dictionary_words_base()) as usize
+    }
+    fn get_dictionary_entry_size(&self) -> usize {
+        self[self.get_dictionary_base() + self.get_word_separators_len() + 1] as usize
+    }
+    /// Gets a dictionary word at a particular index. Panics if the index is out of bounds
+    /// ([`get_dictionary_len`](ZMachine::get_dictionary_len))
+    pub fn get_dictionary_word(&self, idx: usize) -> String {
+        let mut string = String::new();
+        self.copy_dictionary_word(idx, &mut string);
+        string
+    }
+    /// Copies a dictionary word at a particular index into the provided buffer. Panics if the index
+    /// is out of bounds ([`get_dictionary_len`](ZMachine::get_dictionary_len)
+    pub fn copy_dictionary_word(&self, idx: usize, string: &mut String) {
+        assert!(
+            idx < self.get_dictionary_len(),
+            "Dictionary index {} out of bounds",
+            idx
+        );
+        let word_sz = self.get_dictionary_entry_size();
+        let offset = idx * word_sz + 2;
+        self.copy_zstring(
+            (ByteAddress::from(self.get_dictionary_words_base()) + offset).into(),
+            string,
+        );
+    }
+    /// Gets a list of all words in the dictionary.
+    pub fn get_dictionary_words(&self) -> Vec<String> {
+        let len = self.get_dictionary_len();
+        let mut vec = Vec::with_capacity(len);
+        let word_sz = self.get_dictionary_entry_size();
+        let start = ByteAddress::from(self.get_dictionary_words_base() + 2);
+        for x in 0..len {
+            vec.push(
+                self.get_zstring(start + x * word_sz)
+                    .unwrap_or_else(|| panic!("Invalid Z-string at dictionary index {}", x)),
+            );
+        }
+        vec
     }
 }
 

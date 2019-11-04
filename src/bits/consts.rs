@@ -25,33 +25,6 @@ impl BitAddress {
     pub const TWO_DISKS: Self = Self(0xA);
 }
 
-impl WordAddress {
-    pub const HIGH_MEMORY_LOCATION: Self = Self(0x2);
-    pub const INITIAL_PC_LOCATION: Self = Self(0x3);
-    pub const MAIN_LOCATION: Self = Self(0x3);
-    pub const DICTIONARY_LOCATION: Self = Self(0x4);
-    pub const OBJECT_TABLE_LOCATION: Self = Self(0x5);
-    pub const GLOBAL_VARIABLE_TABLE_LOCATION: Self = Self(0x6);
-    pub const STATIC_MEMORY_LOCATION: Self = Self(0x7);
-    pub const ABBREVIATIONS_LOCATION: Self = Self(0xC);
-    pub const FILE_LENGTH: Self = Self(0xD);
-    pub const FILE_CHECKSUM: Self = Self(0xE);
-    pub const SCREEN_WIDTH_UNITS: Self = Self(0x11);
-    pub const SCREEN_HEIGHT_UNITS: Self = Self(0x12);
-    pub const ROUTINES_OFFSET: Self = Self(0x14);
-    pub const STATIC_STRINGS_OFFSET: Self = Self(0x15);
-    pub const TERMINATING_CHARACTERS_TABLE_LOCATION: Self = Self(0x17);
-    pub const OUTPUT_STREAM_3_WIDTH_TOTAL_PIXELS: Self = Self(0x18);
-    pub const ALPHABET_TABLE_ADDRESS: Self = Self(0x1A);
-    pub const HEADER_EXTENSION_TABLE_ADDRESS: Self = Self(0x1B);
-    pub const HEADER_EXT_SIZE: usize = 0x0;
-    pub const HEADER_EXT_MOUSE_X: usize = 0x1;
-    pub const HEADER_EXT_MOUSE_Y: usize = 0x2;
-    pub const HEADER_EXT_UNICODE_TRANSLATION_TABLE_LOCATION: usize = 0x3;
-    pub const HEADER_EXT_DEFAULT_FOREGROUND_COLOR: usize = 0x5;
-    pub const HEADER_EXT_DEFAULT_BACKGROUND_COLOR: usize = 0x6;
-}
-
 impl ByteAddress {
     pub const STORY_VERSION: Self = Self(0x0);
     pub const INTERPRETER_NUMBER: Self = Self(0x1E);
@@ -66,6 +39,31 @@ impl ByteAddress {
     pub const DEFAULT_FOREGROUND_COLOR: Self = Self(0x2D);
     pub const STANDARD_REVISION_MAJOR: Self = Self(0x32);
     pub const STANDARD_REVISION_MINOR: Self = Self(0x33);
+
+    pub const HIGH_MEMORY_LOCATION: Self = Self(0x4);
+    pub const INITIAL_PC_LOCATION: Self = Self(0x6);
+    pub const MAIN_LOCATION: Self = Self(0x6);
+    pub const DICTIONARY_LOCATION: Self = Self(0x8);
+    pub const OBJECT_TABLE_LOCATION: Self = Self(0xA);
+    pub const GLOBAL_VARIABLE_TABLE_LOCATION: Self = Self(0xC);
+    pub const STATIC_MEMORY_LOCATION: Self = Self(0xE);
+    pub const ABBREVIATIONS_LOCATION: Self = Self(0x18);
+    pub const FILE_LENGTH: Self = Self(0x1A);
+    pub const FILE_CHECKSUM: Self = Self(0x1C);
+    pub const SCREEN_WIDTH_UNITS: Self = Self(0x22);
+    pub const SCREEN_HEIGHT_UNITS: Self = Self(0x24);
+    pub const ROUTINES_OFFSET: Self = Self(0x28);
+    pub const STATIC_STRINGS_OFFSET: Self = Self(0x2A);
+    pub const TERMINATING_CHARACTERS_TABLE_LOCATION: Self = Self(0x2E);
+    pub const OUTPUT_STREAM_3_WIDTH_TOTAL_PIXELS: Self = Self(0x30);
+    pub const ALPHABET_TABLE_ADDRESS: Self = Self(0x34);
+    pub const HEADER_EXTENSION_TABLE_ADDRESS: Self = Self(0x36);
+    pub const HEADER_EXT_SIZE: usize = 0x0;
+    pub const HEADER_EXT_MOUSE_X: usize = 0x2;
+    pub const HEADER_EXT_MOUSE_Y: usize = 0x4;
+    pub const HEADER_EXT_UNICODE_TRANSLATION_TABLE_LOCATION: usize = 0x6;
+    pub const HEADER_EXT_DEFAULT_FOREGROUND_COLOR: usize = 0xA;
+    pub const HEADER_EXT_DEFAULT_BACKGROUND_COLOR: usize = 0xC;
 }
 
 impl BitAddress {
