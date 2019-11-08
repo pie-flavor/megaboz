@@ -12,6 +12,8 @@ mod meta;
 pub use self::meta::*;
 mod text;
 pub use self::text::*;
+mod objects;
+pub use self::objects::*;
 
 use failure::Fail;
 use std::fs::File;

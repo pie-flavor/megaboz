@@ -29,3 +29,10 @@ fn read_dictionary_word() {
         .read_dictionary_word(27);
     assert_eq!(word_27, "attach");
 }
+
+#[test]
+fn read_object_name() {
+    let z_machine = ZMachine::from_file("minizork.z3").unwrap();
+    let object_6 = z_machine.object(6);
+    assert_eq!(object_6.read_name(), "control panel")
+}

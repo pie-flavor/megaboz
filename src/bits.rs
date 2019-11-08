@@ -133,6 +133,13 @@ impl Sub<usize> for ByteAddress {
     }
 }
 
+impl Sub<ByteAddress> for ByteAddress {
+    type Output = usize;
+    fn sub(self, rhs: ByteAddress) -> Self::Output {
+        self.0 - rhs.0
+    }
+}
+
 impl SubAssign<usize> for ByteAddress {
     fn sub_assign(&mut self, rhs: usize) {
         self.0 -= rhs;
