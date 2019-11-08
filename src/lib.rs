@@ -14,6 +14,8 @@ mod text;
 pub use self::text::*;
 mod objects;
 pub use self::objects::*;
+mod vm;
+pub use self::vm::*;
 
 use failure::Fail;
 use std::fs::File;

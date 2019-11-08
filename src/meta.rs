@@ -70,4 +70,8 @@ impl ZMachine {
     pub fn is_two_disks(&self) -> bool {
         self[BitAddress::TWO_DISKS]
     }
+    /// Calculates a checksum of the story.
+    pub fn calculate_checksum(&self) -> u16 {
+        unimplemented!()
+    }
 }

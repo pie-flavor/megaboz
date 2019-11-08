@@ -5,7 +5,7 @@ fn read_zstring() {
     let dam_plaque = ZMachine::from_file("minizork.z3")
         .unwrap()
         .read_zstring(ByteAddress(0xb106))
-        .unwrap();
+        .0;
     assert_eq!(dam_plaque, "\
 \"Flood Control Dam #3 was constructed in 783 GUE with a grant of 37 million zorkmids from Lord Dimwit Flathead the Excessive. This impressive structure is composed of 370,000 cubic feet of concrete, is 256 feet tall and 193 feet wide.
 

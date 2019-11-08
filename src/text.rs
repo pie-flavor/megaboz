@@ -53,25 +53,18 @@ impl ZMachine {
         let abbrv_table = self.abbreviations_table_base();
         let abbrv_table_idx = abbrv_table + (abbrv.0 as usize) * 2;
         let abbrv_addr = ByteAddress::from(self.word(abbrv_table_idx) * 2);
-        assert!(
-            self.copy_zstring(abbrv_addr.into(), str),
-            "Invalid Z-string at abbreviation {}",
-            abbrv.0
-        );
+        self.copy_zstring(abbrv_addr.into(), str);
     }
-    /// Returns a Z-string at a particular address in memory, if there is one. If it is not a valid
-    /// Z-string starting point, returns [`None`].
-    pub fn read_zstring(&self, addr: ByteAddress) -> Option<String> {
+    /// Returns a Z-string at a particular address in memory and the number of bytes that it was
+    /// stored in.
+    pub fn read_zstring(&self, addr: ByteAddress) -> (String, usize) {
         let mut str = String::new();
-        if self.copy_zstring(addr, &mut str) {
-            Some(str)
-        } else {
-            None
-        }
+        let len = self.copy_zstring(addr, &mut str);
+        (str, len)
     }
     /// Copies a Z-string at a particular address in memory into a string buffer, if there is one.
     /// Returns true if the copy was successful (i.e. a valid encoding) and false if it wasn't.
-    pub fn copy_zstring(&self, addr: ByteAddress, string: &mut String) -> bool {
+    pub fn copy_zstring(&self, addr: ByteAddress, string: &mut String) -> usize {
         let mut addr = addr;
         fn zchar_to_byte(bits: &BEBitSlice<Word>) -> u8 {
             ((bits[0] as u8) << 4)
@@ -83,8 +76,10 @@ impl ZMachine {
         let alphabet = self.alphabet();
         let mut state = ZStringState::Unset;
         let mut mode = AlphabetMode::Lowercase;
+        let mut bytes_read = 0;
         loop {
             let word = self.word(addr);
+            bytes_read += 2;
             let bits = BEBitSlice::from_element(&word);
             let is_end = bits[0];
             let zchar1 = zchar_to_byte(&bits[1..6]);
@@ -99,7 +94,7 @@ impl ZMachine {
             }
             addr += 2;
         }
-        true
+        bytes_read
     }
     fn decode_zchar(
         &self,
@@ -335,10 +330,7 @@ impl ZMachine {
         let word_sz = self.dictionary_entry_size();
         let start = ByteAddress::from(self.dictionary_words_base() + 2);
         for x in 0..len {
-            vec.push(
-                self.read_zstring(start + x * word_sz)
-                    .unwrap_or_else(|| panic!("Invalid Z-string at dictionary index {}", x)),
-            );
+            vec.push(self.read_zstring(start + x * word_sz).0);
         }
         vec
     }
