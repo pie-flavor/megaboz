@@ -73,8 +73,7 @@ impl ZMachine {
         );
         self.object_unchecked(id)
     }
-    /// Returns an object with a particular ID. Does not do any bounds checking. Do not use unless
-    /// you are sure [`objects_count`](ZMachine::objects_count) is wrong.
+    #[doc(hidden)]
     pub fn object_unchecked(&self, id: usize) -> Object {
         let start = self.object_table_objects_start();
         let sz = self.object_entry_size();
