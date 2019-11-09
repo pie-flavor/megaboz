@@ -16,6 +16,8 @@ mod objects;
 pub use self::objects::*;
 mod vm;
 pub use self::vm::*;
+mod window;
+pub use self::window::*;
 
 use failure::Fail;
 use std::fs::File;

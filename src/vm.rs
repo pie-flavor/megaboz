@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 use crate::*;
+use arrayvec::ArrayVec;
 use failure::Fail;
 
 mod op0;
@@ -56,6 +57,40 @@ impl ZMachine {
             _ => unimplemented!(),
         }
     }
+    fn branch(&mut self, success: bool, addr: &mut ByteAddress) {
+        let top = self[*addr];
+        *addr += 1;
+        let branch = if top & 0b1_0000000 == 0 {
+            !success
+        } else {
+            success
+        };
+        let addr = if top & 0b0_1_000000 == 0b0_1_000000 {
+            *addr + (top & 0b00_111111) as usize
+        } else {
+            let bottom = self[*addr];
+            *addr += 1;
+            let signed = (((top & 0b00_111111) as u16) << 8 | bottom as u16) as i16;
+            if signed >= 0 {
+                *addr + (signed as usize)
+            } else {
+                *addr - ((-signed) as usize)
+            }
+        };
+        if branch {
+            self.jump(addr - 2);
+        }
+    }
+    fn store(&mut self, value: u16, addr: &mut ByteAddress) {
+        let var = self[*addr];
+        *addr += 1;
+        self.set_variable(var, value);
+    }
+    fn read_store(&self, addr: &mut ByteAddress) -> u8 {
+        let var = self[*addr];
+        *addr += 1;
+        var
+    }
     /// Performs an execution jump to a particular address.
     pub fn jump(&mut self, addr: ByteAddress) {
         unimplemented!();
@@ -77,12 +112,12 @@ impl ZMachine {
     pub fn request_restore(&mut self) -> bool {
         unimplemented!()
     }
-    /// Returns the value of a local variable in the current routine.
-    pub fn local_var(&self, var: u8) -> u16 {
+    /// Returns the value of a global variable or local variable in the current routine.
+    pub fn variable(&self, var: u8) -> u16 {
         unimplemented!()
     }
-    /// Sets a local variable in the current routine to a value.
-    pub fn set_local_var(&mut self, var: u8, value: u16) {
+    /// Sets a global variable or local variable in the current routine to a value.
+    pub fn set_variable(&mut self, var: u8, value: u16) {
         unimplemented!()
     }
     /// Restarts the game. The only surviving information is the transcription mode and the fixed
@@ -106,16 +141,23 @@ impl ZMachine {
     pub fn update_status_line(&mut self) {
         unimplemented!()
     }
+    pub fn invoke_routine(&mut self, addr: ByteAddress, retvar: u8) -> RoutineResult {
+        unimplemented!()
+    }
 }
 
 #[derive(Debug, Clone, Fail)]
 pub enum ExecuteError {
     #[fail(display = "Invalid opcode {}", _0)]
     InvalidOpcode(u8),
+    #[fail(display = "Invalid instruction format at address {}", _0)]
+    InvalidInstructionFormat(usize),
 }
 
-type ExecuteResult = Result<Option<u16>, ExecuteError>;
+type ExecuteResult = Result<Action, ExecuteError>;
+type RoutineResult = Result<u16, ExecuteError>;
 
+#[derive(Debug)]
 enum OpcodeForm {
     Long,
     Short,
@@ -123,6 +165,18 @@ enum OpcodeForm {
     Variable,
 }
 
+#[derive(Clone)]
+crate enum Action {
+    Continue,
+    Return(u16),
+    Call {
+        addr: ByteAddress,
+        retvar: Option<u8>,
+        args: ArrayVec<[u16; 7]>,
+    },
+}
+
+#[derive(Debug)]
 crate enum OperandsDesc {
     Op0,
     Op1,
@@ -130,9 +184,21 @@ crate enum OperandsDesc {
     Var,
 }
 
+#[derive(Debug, Copy, Clone)]
 crate enum Operand {
     LargeConstant(u16),
     SmallConstant(u8),
     Variable(u8),
     Omitted,
+}
+
+impl Operand {
+    crate fn resolve(self, z: &mut ZMachine) -> Option<Word> {
+        match self {
+            Operand::LargeConstant(constant) => Some(constant),
+            Operand::SmallConstant(constant) => Some(constant as Word),
+            Operand::Variable(var) => Some(z.variable(var)),
+            Operand::Omitted => None,
+        }
+    }
 }

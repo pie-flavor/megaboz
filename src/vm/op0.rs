@@ -9,36 +9,9 @@ impl ZMachine {
         desc: OperandsDesc,
         opcode: u8,
     ) -> ExecuteResult {
-        fn branch(z: &mut ZMachine, success: bool, addr: &mut ByteAddress) {
-            let top = z[*addr];
-            *addr += 1;
-            let branch = if top & 0b1_0000000 == 0 {
-                !success
-            } else {
-                success
-            };
-            let addr = if top & 0b0_1_000000 == 0b0_1_000000 {
-                *addr + (top & 0b00_111111) as usize
-            } else {
-                let bottom = z[*addr];
-                *addr += 1;
-                let signed = i16::from_be_bytes(((top as u16) << 8 | bottom as u16).to_be_bytes());
-                if signed >= 0 {
-                    *addr + (signed as usize)
-                } else {
-                    *addr + ((-signed) as usize)
-                }
-            };
-            z.jump(addr - 2);
-        }
-        fn store(z: &mut ZMachine, value: u16, addr: &mut ByteAddress) {
-            let var = z[*addr];
-            *addr += 1;
-            z.set_local_var(var, value);
-        }
         match opcode {
-            op0::rtrue => return Ok(Some(1)),
-            op0::rfalse => return Ok(Some(0)),
+            op0::rtrue => return Ok(Action::Return(1)),
+            op0::rfalse => return Ok(Action::Return(0)),
             op0::print => {
                 let (str, bytes) = self.read_zstring(*addr);
                 self.print(&str);
@@ -49,7 +22,7 @@ impl ZMachine {
                 self.print(&str);
                 self.print_newline();
                 *addr += bytes;
-                return Ok(Some(1));
+                return Ok(Action::Return(1));
             }
             op0::nop => {}
             op0::save => {
@@ -59,9 +32,9 @@ impl ZMachine {
                 }
                 let saved = self.request_save();
                 if ver < Version::V4 {
-                    branch(self, saved, addr);
+                    self.branch(saved, addr);
                 } else {
-                    store(self, saved as u16, addr);
+                    self.store(saved as u16, addr);
                 }
             }
             op0::restore => {
@@ -71,20 +44,20 @@ impl ZMachine {
                 }
                 let restored = self.request_restore();
                 if ver < Version::V4 {
-                    branch(self, restored, addr);
+                    self.branch(restored, addr);
                 } else {
-                    store(self, restored as u16, addr);
+                    self.store(restored as u16, addr);
                 }
             }
             op0::restart => self.restart(),
-            op0::ret_popped => return Ok(Some(self.pop_stack())),
+            op0::ret_popped => return Ok(Action::Return(self.pop_stack())),
             op0::pop => {
                 if self.version() < Version::V5 {
                     self.pop_stack();
                 } else {
                     // also `catch`
                     let frame = self.stack_frame();
-                    store(self, frame, addr);
+                    self.store(frame, addr);
                 }
             }
             op0::quit => self.quit(),
@@ -93,11 +66,12 @@ impl ZMachine {
             op0::verify => {
                 let checksum = self.calculate_checksum();
                 let expected = self.word(ByteAddress::FILE_CHECKSUM);
-                branch(self, checksum == expected, addr);
+                self.branch(checksum == expected, addr);
             }
-            op0::extended => {}
+            op0::extended => unreachable!(),
+            op0::piracy => self.branch(true, addr),
             _ => return Err(ExecuteError::InvalidOpcode(opcode)),
         }
-        Ok(None)
+        Ok(Action::Continue)
     }
 }

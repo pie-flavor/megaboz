@@ -171,3 +171,21 @@ impl SubAssign<usize> for BitAddress {
         self.0 -= rhs;
     }
 }
+
+impl ZMachine {
+    pub fn resolve_packed_address(&self, packed: usize, routine: bool) -> ByteAddress {
+        ByteAddress(match self.version() {
+            Version::V1 | Version::V2 | Version::V3 => 2 * packed,
+            Version::V4 | Version::V5 => 4 * packed,
+            Version::V6 | Version::V7 => {
+                4 * packed
+                    + 8 * self.word(if routine {
+                        ByteAddress::ROUTINES_OFFSET
+                    } else {
+                        ByteAddress::STATIC_STRINGS_OFFSET
+                    }) as usize
+            }
+            Version::V8 => 8 * packed,
+        })
+    }
+}

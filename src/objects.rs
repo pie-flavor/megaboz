@@ -116,6 +116,10 @@ impl<'a> Object<'a> {
             Some(id)
         }
     }
+    /// Detaches this object from its parent, or does nothing if it has no parent.
+    pub fn detach(&mut self) {
+        unimplemented!()
+    }
     /// Returns this object's parent, or `None` if this object has no parent.
     pub fn parent(&self) -> Option<Object<'a>> {
         self.parent_id().map(|x| self.machine.object_unchecked(x))
@@ -232,7 +236,7 @@ impl<'a> Object<'a> {
                 }
                 addr += 1;
                 let idx = sz_byte & 0b00111111; // sz_byte % 32
-                let sz = ((sz_byte >> 6) + 1) as usize; // sz_byte / 32 + 1
+                let sz = ((sz_byte >> 5) + 1) as usize; // sz_byte / 32 + 1
                 if idx as usize == property_id {
                     break Some(&self.machine[addr..(addr + sz)]);
                 } else {
