@@ -309,7 +309,7 @@ impl ZMachine {
         string
     }
     /// Copies a dictionary word at a particular index into the provided buffer. Panics if the index
-    /// is out of bounds ([`dictionary_len`](ZMachine::dictionary_len)
+    /// is out of bounds ([`dictionary_len`](ZMachine::dictionary_len))
     pub fn copy_dictionary_word(&self, idx: usize, string: &mut String) {
         assert!(
             idx < self.dictionary_len(),
